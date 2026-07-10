@@ -21,7 +21,7 @@ function App() {
     >
       <AntApp>
         <AuthProvider>
-          <BrowserRouter>
+          <BrowserRouter basename="/price-labeler">
             <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route

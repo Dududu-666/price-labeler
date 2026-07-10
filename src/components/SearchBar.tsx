@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Input, Select, Space } from 'antd'
 import { SearchOutlined, ScanOutlined } from '@ant-design/icons'
 import type { Category } from '@/types'
@@ -21,6 +21,12 @@ export function SearchBar({
   categoryFilter,
 }: SearchBarProps) {
   const barcodeRef = useRef<any>(null)
+  const [localName, setLocalName] = useState(nameKeyword)
+
+  // Sync external value
+  useEffect(() => {
+    setLocalName(nameKeyword)
+  }, [nameKeyword])
 
   // Auto-focus the scanner input so the clerk can scan immediately
   useEffect(() => {
@@ -31,11 +37,18 @@ export function SearchBar({
   const handleBarcodeEnter = (value: string) => {
     if (value.trim()) {
       onBarcodeSearch(value.trim())
-      // Clear the input after processing
       setTimeout(() => {
+        const input = barcodeRef.current?.input as HTMLInputElement
+        if (input) input.value = ''
         barcodeRef.current?.focus()
       }, 100)
     }
+  }
+
+  // Local typing = no lag
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalName(e.target.value)
+    onNameSearch(e.target.value)
   }
 
   return (
@@ -47,11 +60,6 @@ export function SearchBar({
         style={{ width: 280 }}
         onPressEnter={(e) => {
           handleBarcodeEnter((e.target as HTMLInputElement).value)
-          // Clear after processing
-          setTimeout(() => {
-            const input = e.target as HTMLInputElement
-            input.value = ''
-          }, 100)
         }}
         allowClear
       />
@@ -59,8 +67,8 @@ export function SearchBar({
         prefix={<SearchOutlined />}
         placeholder="搜索商品名称..."
         style={{ width: 220 }}
-        value={nameKeyword}
-        onChange={(e) => onNameSearch(e.target.value)}
+        value={localName}
+        onChange={handleNameChange}
         allowClear
       />
       <Select

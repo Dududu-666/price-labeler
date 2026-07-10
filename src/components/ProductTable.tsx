@@ -10,6 +10,7 @@ import { usePriceChangelog } from '@/hooks/usePriceChangelog'
 interface ProductTableProps {
   products: Product[]
   loading: boolean
+  total: number
   onUpdate: (id: number, data: ProductUpdate) => Promise<void>
   onDelete: (id: number) => Promise<void>
   onShowHistory: (product: Product) => void
@@ -19,6 +20,7 @@ interface ProductTableProps {
 export function ProductTable({
   products,
   loading,
+  total,
   onUpdate,
   onDelete,
   onShowHistory,
@@ -148,7 +150,7 @@ export function ProductTable({
       dataSource={products}
       rowKey="id"
       loading={loading}
-      pagination={{ pageSize: 50, showSizeChanger: true, showTotal: (total) => `共 ${total} 件商品` }}
+      pagination={{ pageSize: 50, showSizeChanger: true, showTotal: (t) => `共 ${t} 件商品`, defaultPageSize: 50 }}
       size="middle"
       rowClassName={(record) => record.barcode === highlightBarcode ? 'highlighted-row' : ''}
       locale={{ emptyText: '暂无商品，点击右上角"添加商品"或使用扫码枪录入' }}
