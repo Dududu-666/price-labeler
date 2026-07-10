@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Table, Button, Popconfirm, Space, Typography, Tag, notification } from 'antd'
-import { EditOutlined, DeleteOutlined, HistoryOutlined } from '@ant-design/icons'
+import { HistoryOutlined, DeleteOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
-import type { Product, ProductUpdate, Category } from '@/types'
+import type { Product, ProductUpdate } from '@/types'
 import { InlinePriceEdit } from './InlinePriceEdit'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePriceChangelog } from '@/hooks/usePriceChangelog'
@@ -11,6 +11,9 @@ interface ProductTableProps {
   products: Product[]
   loading: boolean
   total: number
+  page: number
+  pageSize: number
+  onPageChange: (page: number, pageSize: number) => void
   onUpdate: (id: number, data: ProductUpdate) => Promise<void>
   onDelete: (id: number) => Promise<void>
   onShowHistory: (product: Product) => void
@@ -21,6 +24,9 @@ export function ProductTable({
   products,
   loading,
   total,
+  page,
+  pageSize,
+  onPageChange,
   onUpdate,
   onDelete,
   onShowHistory,
@@ -37,7 +43,6 @@ export function ProductTable({
     try {
       await onUpdate(product.id, { [field]: newValue })
 
-      // Record changelog
       await insertChangelog({
         product_id: product.id,
         old_selling_price: field === 'selling_price' ? oldValue : null,
@@ -121,12 +126,7 @@ export function ProductTable({
       width: 140,
       render: (_: unknown, record: Product) => (
         <Space>
-          <Button
-            type="link"
-            size="small"
-            icon={<HistoryOutlined />}
-            onClick={() => onShowHistory(record)}
-          >
+          <Button type="link" size="small" icon={<HistoryOutlined />} onClick={() => onShowHistory(record)}>
             历史
           </Button>
           <Popconfirm
@@ -150,7 +150,15 @@ export function ProductTable({
       dataSource={products}
       rowKey="id"
       loading={loading}
-      pagination={{ pageSize: 50, showSizeChanger: true, showTotal: (t) => `共 ${t} 件商品`, defaultPageSize: 50 }}
+      pagination={{
+        current: page,
+        pageSize: pageSize,
+        total: total,
+        showSizeChanger: true,
+        pageSizeOptions: ['20', '50', '100', '200'],
+        showTotal: (t) => `共 ${t} 件商品`,
+        onChange: (p, ps) => onPageChange(p, ps),
+      }}
       size="middle"
       rowClassName={(record) => record.barcode === highlightBarcode ? 'highlighted-row' : ''}
       locale={{ emptyText: '暂无商品，点击右上角"添加商品"或使用扫码枪录入' }}

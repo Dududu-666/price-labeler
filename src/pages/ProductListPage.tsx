@@ -61,11 +61,13 @@ export function ProductListPage() {
   const [historyProduct, setHistoryProduct] = useState<Product | null>(null)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(50)
 
   // Load products
   useEffect(() => {
-    fetchProducts({ nameKeyword: nameKeyword || undefined, category: categoryFilter, pageSize: 50 })
-  }, [nameKeyword, categoryFilter])
+    fetchProducts({ nameKeyword: nameKeyword || undefined, category: categoryFilter, page: page - 1, pageSize })
+  }, [nameKeyword, categoryFilter, page, pageSize])
 
   useEffect(() => {
     fetchCategories()
@@ -102,6 +104,11 @@ export function ProductListPage() {
     setAutoCatLoading(false)
     fetchProducts({ nameKeyword: nameKeyword || undefined, category: categoryFilter, pageSize: 50 })
   }, [autoCatPreview, fetchProducts, nameKeyword, categoryFilter])
+
+  const handlePageChange = useCallback((p: number, ps: number) => {
+    setPage(p)
+    setPageSize(ps)
+  }, [])
 
   // Barcode scanner
   const handleBarcodeSearch = useCallback(async (barcode: string) => {
@@ -183,6 +190,9 @@ export function ProductListPage() {
         products={products}
         loading={productsLoading}
         total={total}
+        page={page}
+        pageSize={pageSize}
+        onPageChange={handlePageChange}
         onUpdate={handleUpdateProduct}
         onDelete={handleDeleteProduct}
         onShowHistory={setHistoryProduct}
