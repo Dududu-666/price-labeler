@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Table, Button, Popconfirm, Space, Typography, Tag, notification } from 'antd'
 import { HistoryOutlined, DeleteOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
@@ -13,11 +13,28 @@ interface ProductTableProps {
   total: number
   page: number
   pageSize: number
+  groupByCategory: boolean
   onPageChange: (page: number, pageSize: number) => void
   onUpdate: (id: number, data: ProductUpdate) => Promise<void>
   onDelete: (id: number) => Promise<void>
   onShowHistory: (product: Product) => void
   highlightBarcode?: string
+}
+
+// Category color map
+const CATEGORY_COLORS: Record<string, string> = {
+  '饮料': '#1677ff',
+  '零食': '#fa8c16',
+  '日用品': '#52c41a',
+  '酒类': '#722ed1',
+  '调味品': '#eb2f96',
+  '粮油': '#13c2c2',
+  '冷冻食品': '#2f54eb',
+  '烟草': '#595959',
+}
+
+function getCategoryColor(cat: string): string {
+  return CATEGORY_COLORS[cat] || '#1677ff'
 }
 
 export function ProductTable({
@@ -26,6 +43,7 @@ export function ProductTable({
   total,
   page,
   pageSize,
+  groupByCategory,
   onPageChange,
   onUpdate,
   onDelete,
@@ -98,7 +116,18 @@ export function ProductTable({
       dataIndex: 'category',
       key: 'category',
       width: 100,
-      render: (text: string) => text ? <Tag color="blue">{text}</Tag> : <Tag>-</Tag>,
+      render: (text: string) => text ? <Tag color={getCategoryColor(text)}>{text}</Tag> : <Tag>-</Tag>,
+    },
+    {
+      title: '毛利率',
+      key: 'margin',
+      width: 100,
+      render: (_: unknown, record: Product) => {
+        if (!record.cost_price || record.cost_price === 0) return <Typography.Text type="secondary">-</Typography.Text>
+        const margin = ((record.selling_price - record.cost_price) / record.selling_price * 100)
+        const color = margin > 30 ? '#52c41a' : margin > 15 ? '#fa8c16' : '#ff4d4f'
+        return <Typography.Text style={{ color }}>{margin.toFixed(1)}%</Typography.Text>
+      },
     },
     {
       title: '进价 (¥)',
@@ -144,13 +173,40 @@ export function ProductTable({
     },
   ]
 
+  // Group products by category for group view
+  const groupedByCategory = useMemo(() => {
+    if (!groupByCategory) return null
+    const map = new Map<string, Product[]>()
+    for (const p of products) {
+      const cat = p.category || '未分类'
+      if (!map.has(cat)) map.set(cat, [])
+      map.get(cat)!.push(p)
+    }
+    // Sort categories: 未分类 last, others alphabetically
+    const entries = Array.from(map.entries())
+    entries.sort((a, b) => {
+      if (a[0] === '未分类') return 1
+      if (b[0] === '未分类') return -1
+      return a[0].localeCompare(b[0])
+    })
+    return entries.map(([cat, items]) => ({
+      category: cat,
+      count: items.length,
+      children: items,
+    }))
+  }, [groupByCategory, products])
+
   return (
     <Table
       columns={columns}
-      dataSource={products}
+      dataSource={groupedByCategory ? (groupedByCategory as any) : products}
       rowKey="id"
       loading={loading}
-      pagination={{
+      expandable={groupedByCategory ? {
+        defaultExpandAllRows: false,
+        expandRowByClick: true,
+      } : undefined}
+      pagination={groupedByCategory ? false : {
         current: page,
         pageSize: pageSize,
         total: total,

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Space, Button, notification, Modal, Tag, Typography, Table } from 'antd'
-import { PlusOutlined, ImportOutlined, ThunderboltOutlined } from '@ant-design/icons'
+import { Space, Button, notification, Modal, Tag, Typography, Table, Switch } from 'antd'
+import { PlusOutlined, ImportOutlined, ThunderboltOutlined, GroupOutlined } from '@ant-design/icons'
 import { SearchBar } from '@/components/SearchBar'
 import { ProductTable } from '@/components/ProductTable'
 import { AddProductModal } from '@/components/AddProductModal'
@@ -63,6 +63,7 @@ export function ProductListPage() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(50)
+  const [groupByCategory, setGroupByCategory] = useState(false)
 
   // Load products
   useEffect(() => {
@@ -174,6 +175,15 @@ export function ProductListPage() {
           {highlightBarcode && (
             <Button onClick={clearBarcodeSearch}>清除条码搜索</Button>
           )}
+          <Space size="small">
+            <GroupOutlined />
+            <Switch
+              checked={groupByCategory}
+              onChange={setGroupByCategory}
+              checkedChildren="分组"
+              unCheckedChildren="列表"
+            />
+          </Space>
           <Button icon={<ThunderboltOutlined />} onClick={handleAutoCategorize} loading={autoCatLoading}>
             自动分类
           </Button>
@@ -192,6 +202,7 @@ export function ProductListPage() {
         total={total}
         page={page}
         pageSize={pageSize}
+        groupByCategory={groupByCategory}
         onPageChange={handlePageChange}
         onUpdate={handleUpdateProduct}
         onDelete={handleDeleteProduct}
