@@ -1,25 +1,24 @@
 import { useState } from 'react'
 import { Table, Button, Space, Popconfirm, notification, Tag } from 'antd'
-import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons'
+import { EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import type { Category } from '@/types'
-import { supabase } from '@/supabase/client'
 
 interface CategoryTableProps {
   categories: Category[]
   loading: boolean
   onRefresh: () => Promise<void>
   onEdit: (category: Category) => void
+  onDelete: (id: number) => Promise<void>
 }
 
-export function CategoryTable({ categories, loading, onRefresh, onEdit }: CategoryTableProps) {
+export function CategoryTable({ categories, loading, onRefresh, onEdit, onDelete }: CategoryTableProps) {
   const [deleting, setDeleting] = useState<number | null>(null)
 
   const handleDelete = async (category: Category) => {
     try {
       setDeleting(category.id)
-      const { error } = await supabase.from('categories').delete().eq('id', category.id)
-      if (error) throw error
+      await onDelete(category.id)
       notification.success({ message: '分类已删除' })
       await onRefresh()
     } catch (e: any) {

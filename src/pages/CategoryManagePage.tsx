@@ -4,11 +4,16 @@ import { PlusOutlined } from '@ant-design/icons'
 import { CategoryTable } from '@/components/CategoryTable'
 import { AddCategoryModal } from '@/components/AddCategoryModal'
 import { useCategories } from '@/hooks/useCategories'
-import { supabase } from '@/supabase/client'
+import { useProducts } from '@/hooks/useProducts'
 import type { Category } from '@/types'
 
 export function CategoryManagePage() {
-  const { categories, loading, fetchCategories, createCategory, updateCategory } = useCategories()
+  const { categories, loading, fetchCategories, createCategory, updateCategory, deleteCategory } = useCategories()
+
+  const handleDeleteCategory = useCallback(async (id: number) => {
+    await deleteCategory(id)
+  }, [deleteCategory])
+  const { cascadeCategoryRename } = useProducts()
   const [modalOpen, setModalOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<Category | undefined>(undefined)
 
@@ -24,16 +29,12 @@ export function CategoryManagePage() {
 
   const handleSubmit = useCallback(async (data: { name: string; sort_order?: number }) => {
     if (editingCategory) {
-      // Update category name — also cascade to products table
       const oldName = editingCategory.name
       await updateCategory(editingCategory.id, data)
       if (data.name !== oldName) {
-        // Cascade rename in products
-        const { error } = await supabase
-          .from('products')
-          .update({ category: data.name })
-          .eq('category', oldName)
-        if (error) {
+        try {
+          await cascadeCategoryRename(oldName, data.name)
+        } catch (error: any) {
           notification.warning({ message: '分类名已更新，但部分商品更新失败', description: error.message })
         }
       }
@@ -41,7 +42,7 @@ export function CategoryManagePage() {
       await createCategory(data)
     }
     await fetchCategories()
-  }, [editingCategory, updateCategory, createCategory, fetchCategories])
+  }, [editingCategory, updateCategory, createCategory, fetchCategories, cascadeCategoryRename])
 
   return (
     <div>
@@ -61,6 +62,7 @@ export function CategoryManagePage() {
         loading={loading}
         onRefresh={fetchCategories}
         onEdit={handleEdit}
+        onDelete={handleDeleteCategory}
       />
 
       <AddCategoryModal

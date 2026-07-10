@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { supabase } from '@/supabase/client'
 import { Product, ProductInsert, ProductUpdate } from '@/types'
 
@@ -79,6 +79,37 @@ export function useProducts() {
     return data
   }, [])
 
+  /**
+   * Fetch all products that have no category set.
+   */
+  const fetchUncategorized = useCallback(async (): Promise<Product[]> => {
+    const { data } = await supabase
+      .from('products')
+      .select('*')
+      .or('category.is.null,category.eq.""')
+    return (data || []) as Product[]
+  }, [])
+
+  /**
+   * Batch-update categories for multiple products by their IDs.
+   */
+  const batchUpdateCategory = useCallback(async (updates: { id: number; category: string }[]) => {
+    for (const { id, category } of updates) {
+      await supabase.from('products').update({ category }).eq('id', id)
+    }
+  }, [])
+
+  /**
+   * Update category name on all products matching old name.
+   */
+  const cascadeCategoryRename = useCallback(async (oldName: string, newName: string) => {
+    const { error } = await supabase
+      .from('products')
+      .update({ category: newName })
+      .eq('category', oldName)
+    if (error) throw error
+  }, [])
+
   return {
     products,
     loading,
@@ -89,5 +120,8 @@ export function useProducts() {
     deleteProduct,
     batchUpsert,
     getProductByBarcode,
+    fetchUncategorized,
+    batchUpdateCategory,
+    cascadeCategoryRename,
   }
 }

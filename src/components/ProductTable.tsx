@@ -6,6 +6,7 @@ import type { Product, ProductUpdate } from '@/types'
 import { InlinePriceEdit } from './InlinePriceEdit'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePriceChangelog } from '@/hooks/usePriceChangelog'
+import { getCategoryColor } from '@/utils/categoryDisplay'
 
 interface ProductTableProps {
   products: Product[]
@@ -19,22 +20,6 @@ interface ProductTableProps {
   onDelete: (id: number) => Promise<void>
   onShowHistory: (product: Product) => void
   highlightBarcode?: string
-}
-
-// Category color map
-const CATEGORY_COLORS: Record<string, string> = {
-  '饮料': '#1677ff',
-  '零食': '#fa8c16',
-  '日用品': '#52c41a',
-  '酒类': '#722ed1',
-  '调味品': '#eb2f96',
-  '粮油': '#13c2c2',
-  '冷冻食品': '#2f54eb',
-  '烟草': '#595959',
-}
-
-function getCategoryColor(cat: string): string {
-  return CATEGORY_COLORS[cat] || '#1677ff'
 }
 
 export function ProductTable({
